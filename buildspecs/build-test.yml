@@ -1,0 +1,2 @@
+# CodeBuild buildspec: myapp-build-test
+# Validate stage — compile, unit tests, coverage (reports: myapp-unit-tests, myapp-coverage)

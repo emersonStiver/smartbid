@@ -1,0 +1,2 @@
+# CodeBuild buildspec: myapp-security-scan
+# Validate stage — SAST, dependency and IaC scans (report: myapp-security-findings)

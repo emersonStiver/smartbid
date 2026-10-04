@@ -1,0 +1,28 @@
+# Local provider/module cache
+.terraform/
+
+# State files (may contain secrets)
+*.tfstate
+*.tfstate.*
+
+# Saved plans (may contain secrets)
+tfplan
+*.tfplan
+
+# Secret variable files (terraform.tfvars is committed and must stay non-secret)
+*.secret.tfvars
+secrets.auto.tfvars
+
+# Local overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config and logs
+.terraformrc
+terraform.rc
+crash.log
+crash.*.log
+
+# Keep .terraform.lock.hcl committed (pins provider versions)

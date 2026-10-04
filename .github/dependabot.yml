@@ -1,0 +1,41 @@
+# Dependabot opens pull requests to keep dependencies up to date.
+# Commit prefixes follow Conventional Commits so PR titles pass the same rules as yours.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      angular:
+        patterns: ["@angular/*", "@angular-devkit/*"]
+
+  - package-ecosystem: maven
+    directory: /analyzer-service
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+
+  # One PR per provider version bump across all layers, instead of one PR per folder
+  - package-ecosystem: terraform
+    directories:
+      - /infra/environments/*/*
+      - /infra/modules/*
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      terraform-providers:
+        patterns: ["*"]
+        group-by: dependency-name

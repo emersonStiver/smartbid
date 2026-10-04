@@ -1,0 +1,70 @@
+# CodeBuild buildspec: myapp-pr-check (infra/environments/shared/cicd-builds)
+# Triggered by GitHub pull requests. Runs only the checks for the folders the PR changed,
+# then CodeBuild reports pass/fail back to GitHub; that result is the required check on main.
+# Runs on the myapp-ci/tools image, which already contains terraform, tflint, checkov, node and java.
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    TF_PLUGIN_CACHE_DIR: "/tmp/terraform-plugin-cache"
+
+phases:
+  pre_build:
+    commands:
+      # Compare the PR branch against the branch it will merge into (requires full clone depth on the project)
+      - BASE_BRANCH="${CODEBUILD_WEBHOOK_BASE_REF#refs/heads/}"
+      - git fetch --no-tags origin "${BASE_BRANCH:-main}"
+      - git diff --name-only FETCH_HEAD...HEAD > /tmp/changed.txt
+      - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - echo "Changed files:" && cat /tmp/changed.txt
+
+  build:
+    commands:
+      - |
+        set -euo pipefail
+        changed() { grep -qE "$1" /tmp/changed.txt; }
+        ran=0
+
+        if changed '^infra/'; then
+          ran=1
+          echo "===== infra"
+          cd "$CODEBUILD_SRC_DIR/infra"
+          terraform fmt -check -recursive
+          for dir in $(find environments modules -name '*.tf' -not -path '*/.terraform/*' -printf '%h\n' | sort -u); do
+            echo "--- validate $dir"
+            terraform -chdir="$dir" init -backend=false -input=false > /dev/null
+            terraform -chdir="$dir" validate -no-color
+          done
+          tflint --init --config "$PWD/.tflint.hcl"
+          tflint --recursive --config "$PWD/.tflint.hcl"
+          checkov --directory . --framework terraform --quiet
+        fi
+
+        if changed '^frontend/'; then
+          ran=1
+          echo "===== frontend"
+          cd "$CODEBUILD_SRC_DIR/frontend"
+          npm ci
+          npx ng build
+          npx ng test --watch=false
+        fi
+
+        if changed '^analyzer-service/'; then
+          ran=1
+          echo "===== analyzer-service"
+          cd "$CODEBUILD_SRC_DIR/analyzer-service"
+          chmod +x mvnw
+          ./mvnw -B -ntp verify
+        fi
+
+        if [ "$ran" -eq 0 ]; then
+          echo "No infra/, frontend/ or analyzer-service/ changes: nothing to check."
+        fi
+
+# Speeds up repeat builds; enable local or S3 caching on the CodeBuild project for this to take effect.
+cache:
+  paths:
+    - /root/.npm/**/*
+    - /root/.m2/**/*
+    - /tmp/terraform-plugin-cache/**/*

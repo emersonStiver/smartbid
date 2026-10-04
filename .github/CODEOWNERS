@@ -1,0 +1,12 @@
+# Who reviews changes to each path. The last matching line wins.
+# TODO: replace @your-github-username with your GitHub handle (later: a team such as @smartbid/platform).
+# Enforced only when "Require review from Code Owners" is turned on in the ruleset.
+
+*                    @your-github-username
+
+/infra/              @emersonStiver
+/buildspecs/         @emersonStiver
+/ci/                 @emersonStiver
+/frontend/           @emersonStiver
+/analyzer-service/   @emersonStiver
+/.github/            @emersonStiver

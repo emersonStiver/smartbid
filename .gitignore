@@ -1,0 +1,18 @@
+# Repo-wide ignores. frontend/, analyzer-service/ and infra/ each have their own .gitignore as well.
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Claude Code personal settings (the shared .claude/settings.json is committed)
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.idea/
+*.swp

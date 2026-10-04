@@ -1,0 +1,20 @@
+# Store text files with LF line endings, whether you commit from Windows or WSL.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files: never convert or diff as text
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.zip   binary
+*.jar   binary
+*.woff  binary
+*.woff2 binary

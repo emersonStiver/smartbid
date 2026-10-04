@@ -1,0 +1,5 @@
+account_id  = "965452087758"
+environment = "shared"
+stack       = "cicd-builds"
+project     = "smartbid"
+managed_by  = "terraform"

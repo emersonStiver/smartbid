@@ -1,0 +1,2 @@
+# CodeBuild buildspec: myapp-package-publish
+# Package stage — docker build, scan, push to ECR myapp, SBOM to reports bucket, cosign sign; export IMAGE_TAG

@@ -1,0 +1,29 @@
+name: Task
+description: Technical work with no direct user-facing change (infra, refactoring, tooling, docs)
+title: "chore: "
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - infra
+        - frontend
+        - analyzer-service
+        - ci/cd
+        - docs
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to be done?
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      placeholder: |
+        - [ ] terraform plan shows only the expected changes
+        - [ ] ...

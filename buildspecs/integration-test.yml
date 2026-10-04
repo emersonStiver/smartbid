@@ -1,0 +1,2 @@
+# CodeBuild buildspec: myapp-integration-test
+# IntegrationTest stage — docker compose up dependencies, run integration tests (report: myapp-integration-tests)

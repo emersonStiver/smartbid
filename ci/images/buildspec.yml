@@ -1,0 +1,2 @@
+# CodeBuild buildspec: myapp-ci-image-build
+# docker build ci/images/tools -> push to ECR myapp-ci/tools (privileged mode)
