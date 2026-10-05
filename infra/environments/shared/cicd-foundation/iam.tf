@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "boundary" {
       "kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey*", "kms:ReEncrypt*", "kms:DescribeKey", "kms:Sign", "kms:GetPublicKey",
       "ecr:*",
       "codebuild:StartBuild", "codebuild:BatchGetBuilds", "codebuild:StopBuild",
-      "codebuild:CreateReport", "codebuild:UpdateReport", "codebuild:BatchPutTestCases", "codebuild:BatchPutCodeCoverages",
+      "codebuild:CreateReportGroup", "codebuild:CreateReport", "codebuild:UpdateReport", "codebuild:BatchPutTestCases", "codebuild:BatchPutCodeCoverages",
       "codeconnections:UseConnection", "codeconnections:GetConnection", "codeconnections:GetConnectionToken",
       "codestar-connections:UseConnection", "codestar-connections:GetConnection", "codestar-connections:GetConnectionToken",
       "codeartifact:GetAuthorizationToken", "codeartifact:GetRepositoryEndpoint", "codeartifact:ReadFromRepository",
@@ -178,8 +178,9 @@ data "aws_iam_policy_document" "pipeline_artifacts_rw" {
 
 data "aws_iam_policy_document" "test_reports" {
   statement {
-    sid       = "WriteTestReports"
-    actions   = ["codebuild:CreateReport", "codebuild:UpdateReport", "codebuild:BatchPutTestCases", "codebuild:BatchPutCodeCoverages"]
+    sid = "WriteTestReports"
+    # CodeBuild calls CreateReportGroup on every report upload, even when the group already exists
+    actions   = ["codebuild:CreateReportGroup", "codebuild:CreateReport", "codebuild:UpdateReport", "codebuild:BatchPutTestCases", "codebuild:BatchPutCodeCoverages"]
     resources = [local.report_group_arns]
   }
 }

@@ -213,6 +213,12 @@ resource "aws_codebuild_webhook" "ci_image" {
       pattern = "^ci/images/"
     }
   }
+
+  # This project never builds pull requests (the filter only accepts pushes to main). Without this, the
+  # default PR approval policy posts a failing "Build not triggered: Pull request approval required" check on every PR.
+  pull_request_build_policy {
+    requires_comment_approval = "DISABLED"
+  }
 }
 
 # ---------------------------------------------------------------------------------------------

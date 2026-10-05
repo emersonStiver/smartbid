@@ -29,7 +29,8 @@ phases:
         gitleaks git --log-opts="FETCH_HEAD..HEAD" --redact --exit-code 1 "$CODEBUILD_SRC_DIR"
 
         echo "===== Dockerfiles"
-        grep -E '(^|/)Dockerfile$' /tmp/changed.txt | while read -r f; do
+        # "|| true": grep exits 1 when no Dockerfile changed, which pipefail would turn into a failure
+        for f in $(grep -E '(^|/)Dockerfile$' /tmp/changed.txt || true); do
           if [ -f "$f" ]; then hadolint "$f"; fi
         done
 
