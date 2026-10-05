@@ -1,0 +1,9 @@
+# Accepted trivy findings ("permit" quality-gate decisions), each scoped to a path and documented.
+# Terraform findings are ignored inline instead (#trivy:ignore:<ID> above the resource).
+# Used by buildspecs/security-scan.yml (trivy fs --ignorefile .trivyignore.yaml).
+
+misconfigurations:
+  - id: DS-0002
+    paths:
+      - "ci/images/tools/Dockerfile"
+    statement: CodeBuild runs builds as root, and the Docker daemon in privileged projects requires root

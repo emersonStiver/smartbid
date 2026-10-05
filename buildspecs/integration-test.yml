@@ -1,2 +1,43 @@
-# CodeBuild buildspec: myapp-integration-test
-# IntegrationTest stage — docker compose up dependencies, run integration tests (report: myapp-integration-tests)
+# CodeBuild buildspec: smartbid-integration-test — pipeline stage IntegrationTest (privileged)
+# Starts the service (and later its dependencies: postgres, redis...) with docker compose and runs
+# black-box tests against it. Report group: smartbid-integration-test-integration-tests
+# Env: REGISTRY, BASE_REGISTRY, BUILD_CACHE_REPOSITORY_URI (Terraform)
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  install:
+    commands:
+      # Custom images don't get a Docker daemon automatically: start one (needs privileged mode)
+      - nohup dockerd --host=unix:///var/run/docker.sock --storage-driver=overlay2 > /tmp/dockerd.log 2>&1 &
+      - timeout 30 sh -c "until docker info > /dev/null 2>&1; do sleep 1; done"
+
+  pre_build:
+    commands:
+      # Base images come through the ECR pull-through cache in the shared account
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+      - mkdir -p reports
+
+  build:
+    commands:
+      - docker compose -f ci/integration/docker-compose.yml up --detach --build --wait --wait-timeout 180
+      - bash ci/integration/smoke-test.sh reports/integration-tests.xml
+
+  post_build:
+    commands:
+      - docker compose -f ci/integration/docker-compose.yml logs > reports/compose.log 2>&1 || true
+      - docker compose -f ci/integration/docker-compose.yml down --volumes || true
+
+reports:
+  integration-tests:
+    base-directory: reports
+    files:
+      - integration-tests.xml
+    file-format: JUNITXML
+
+artifacts:
+  files:
+    - reports/compose.log
+  discard-paths: yes

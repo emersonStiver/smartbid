@@ -1,2 +1,28 @@
-# CodeBuild buildspec: myapp-build-test
-# Validate stage — compile, unit tests, coverage (reports: myapp-unit-tests, myapp-coverage)
+# CodeBuild buildspec: smartbid-build-test — pipeline stage Validate (parallel with security-scan)
+# Compiles the service, runs unit tests and measures coverage.
+# Reports (report groups in cicd-builds): smartbid-build-test-unit-tests, smartbid-build-test-coverage
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  build:
+    commands:
+      - cd analyzer-service && mvn -B -ntp verify
+
+reports:
+  unit-tests:
+    base-directory: analyzer-service/target/surefire-reports
+    files:
+      - "TEST-*.xml"
+    file-format: JUNITXML
+  coverage:
+    base-directory: analyzer-service/target/site/jacoco
+    files:
+      - jacoco.xml
+    file-format: JACOCOXML
+
+cache:
+  paths:
+    - /root/.m2/**/*

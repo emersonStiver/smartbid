@@ -25,3 +25,51 @@ variable "managed_by" {
   description = "The entity managing the resources"
   type        = string
 }
+
+variable "deploy_targets" {
+  description = "Workload accounts the pipeline deploys to. Each needs a <project>-<env>-deploy-role (created in that account's bootstrap stack)."
+  type = map(object({
+    account_id = string
+  }))
+}
+
+variable "app_repositories" {
+  description = "Application images, one ECR repository each (<project>/<name>)"
+  type        = list(string)
+}
+
+variable "artifact_retention_days" {
+  description = "Days pipeline artifacts are kept"
+  type        = number
+  default     = 30
+}
+
+variable "reports_retention_days" {
+  description = "Days SBOMs and scan reports are kept"
+  type        = number
+  default     = 365
+}
+
+variable "create_docker_hub_secret" {
+  description = "Create the empty ecr-pullthroughcache/docker-hub secret (put the credentials in it yourself)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_docker_hub_pull_through" {
+  description = "Create the docker-hub pull-through cache rule. Enable only after the secret holds valid credentials."
+  type        = bool
+  default     = false
+}
+
+variable "create_scanner_tokens_secret" {
+  description = "Create the empty <project>/ci/scanner-tokens secret for Semgrep/Snyk tokens"
+  type        = bool
+  default     = false
+}
+
+variable "enable_codeartifact" {
+  description = "Create the CodeArtifact domain and dependency proxy repositories"
+  type        = bool
+  default     = false
+}

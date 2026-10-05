@@ -1,2 +1,92 @@
-# CodeBuild buildspec: myapp-package-publish
-# Package stage — docker build, scan, push to ECR myapp, SBOM to reports bucket, cosign sign; export IMAGE_TAG
+# CodeBuild buildspec: smartbid-package-publish — pipeline stage Package (privileged)
+#   build -> scan -> push -> SBOM -> sign -> imagedefinitions.json for the ECS deploy action
+# Exports IMAGE_TAG and IMAGE_URI (pipeline namespace PackageVariables).
+# Env (Terraform): REGISTRY, BASE_REGISTRY, APP_NAME, CONTAINER_NAME, APP_REPOSITORY_URI, APP_REPOSITORY_NAME,
+#                  BUILD_CACHE_REPOSITORY_URI, REPORTS_BUCKET, SIGNING_KEY_ARN, SOURCE_URL
+# Env (pipeline):  COMMIT_ID
+version: 0.2
+
+env:
+  shell: bash
+  exported-variables:
+    - IMAGE_TAG
+    - IMAGE_URI
+
+phases:
+  install:
+    commands:
+      - nohup dockerd --host=unix:///var/run/docker.sock --storage-driver=overlay2 > /tmp/dockerd.log 2>&1 &
+      - timeout 30 sh -c "until docker info > /dev/null 2>&1; do sleep 1; done"
+
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+      - export IMAGE_TAG="${COMMIT_ID:-$CODEBUILD_RESOLVED_SOURCE_VERSION}"
+      - export IMAGE_URI="$APP_REPOSITORY_URI:$IMAGE_TAG"
+      - mkdir -p reports
+      # Tags are immutable: if this commit was already published (pipeline retry), skip straight to deploy
+      - |
+        if aws ecr describe-images --repository-name "$APP_REPOSITORY_NAME" --image-ids imageTag="$IMAGE_TAG" > /dev/null 2>&1; then
+          echo "$IMAGE_URI already exists; reusing it"
+          export ALREADY_PUBLISHED=1
+        else
+          export ALREADY_PUBLISHED=0
+        fi
+
+  build:
+    commands:
+      - |
+        set -euo pipefail
+        if [ "$ALREADY_PUBLISHED" = "1" ]; then exit 0; fi
+
+        echo "===== build (layer cache in ECR, see analyzer-service/Dockerfile)"
+        docker buildx create --name ci --driver docker-container --use
+        docker buildx build \
+          --file "$APP_NAME/Dockerfile" \
+          --build-arg BASE_REGISTRY="$BASE_REGISTRY" \
+          --build-arg APP_NAME="$APP_NAME" \
+          --build-arg APP_VERSION="$IMAGE_TAG" \
+          --build-arg GIT_SHA="$IMAGE_TAG" \
+          --build-arg SOURCE_URL="$SOURCE_URL" \
+          --cache-from "type=registry,ref=$BUILD_CACHE_REPOSITORY_URI:$APP_NAME" \
+          --cache-to "type=registry,ref=$BUILD_CACHE_REPOSITORY_URI:$APP_NAME,mode=max,image-manifest=true,oci-mediatypes=true" \
+          --tag "$IMAGE_URI" \
+          --load \
+          "$APP_NAME"
+
+        echo "===== scan the image before pushing (CRITICAL fails the build)"
+        trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 \
+          --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
+          --output reports/image-findings.xml "$IMAGE_URI"
+        trivy image --severity CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE_URI"
+
+        echo "===== push"
+        docker push "$IMAGE_URI"
+        DIGEST_REF="$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE_URI")"
+        echo "Pushed $DIGEST_REF"
+
+        echo "===== SBOM"
+        syft "registry:$DIGEST_REF" -o "spdx-json=reports/sbom.spdx.json"
+        aws s3 cp reports/sbom.spdx.json "s3://$REPORTS_BUCKET/sbom/$APP_NAME/$IMAGE_TAG.spdx.json"
+
+        echo "===== sign the image and attach the SBOM as a signed attestation (KMS key, no public log)"
+        cosign sign --yes --tlog-upload=false --key "awskms:///$SIGNING_KEY_ARN" "$DIGEST_REF"
+        cosign attest --yes --tlog-upload=false --key "awskms:///$SIGNING_KEY_ARN" \
+          --type spdxjson --predicate reports/sbom.spdx.json "$DIGEST_REF"
+
+  post_build:
+    commands:
+      # Input for the ECS deploy action: which container gets which image
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$IMAGE_URI" > imagedefinitions.json
+      - cat imagedefinitions.json
+
+reports:
+  image-findings:
+    base-directory: reports
+    files:
+      - image-findings.xml
+    file-format: JUNITXML
+
+artifacts:
+  files:
+    - imagedefinitions.json
