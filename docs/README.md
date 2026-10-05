@@ -1,6 +1,6 @@
 # SmartBid
 
-Angular frontend, Spring Boot services and Terraform infrastructure on AWS, in one repository.
+Angular frontend, Spring Boot services and Terraform infrastructure on AWS, in one repository
 
 ## Repository layout
 
