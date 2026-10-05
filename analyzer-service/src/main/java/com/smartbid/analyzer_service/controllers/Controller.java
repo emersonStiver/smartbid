@@ -21,6 +21,11 @@ public class Controller {
     public String getMethodName3() {
         return "Hi from colombiaa";
     }
+
+    @GetMapping("/testCamilo")
+    public String getMethodName4() {
+        return "Hi from colombiaa";
+    }
     
     
     
