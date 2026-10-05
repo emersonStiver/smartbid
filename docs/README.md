@@ -29,7 +29,7 @@ GitHub stores the code and hosts pull requests. All CI/CD runs on AWS in the sha
 - Node.js 22+, Java 21
 - `pre-commit`, `tflint`, `checkov`
 
-## Getting started
+## Getting started.
 
 ```bash
 pre-commit install          # enables commit checks (code + commit message)
