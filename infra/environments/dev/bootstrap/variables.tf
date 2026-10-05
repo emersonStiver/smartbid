@@ -9,11 +9,6 @@ variable "account_id" {
   type        = string
 }
 
-variable "bucket_region" {
-  description = "The region of the bucket that will store the state of all the terraform stacks in Dev Account"
-  type        = string
-}
-
 variable "versioning_enabled" {
   type        = bool
   description = "Whether to activate or not versioning in the state bucket"

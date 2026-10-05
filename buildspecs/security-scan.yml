@@ -15,6 +15,13 @@ env:
   #   SEMGREP_APP_TOKEN: "smartbid/ci/scanner-tokens:SEMGREP_APP_TOKEN"
 
 phases:
+  pre_build:
+    commands:
+      # Put every dependency POM in ~/.m2 first: trivy reads them locally instead of asking Maven Central,
+      # which rate-limits shared CI IP addresses (trivy fails with "repository blocks ... requests from this IP")
+      # (subshell: the working directory stays at the repo root even if mvn fails)
+      - (cd analyzer-service && mvn -B -ntp -q dependency:resolve)
+
   build:
     commands:
       - |
@@ -31,6 +38,7 @@ phases:
 
         echo "===== trivy (dependencies + misconfigurations)"
         trivy fs --scanners vuln,misconfig --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+          --ignorefile .trivyignore.yaml \
           --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
           --output reports/trivy-fs.xml . || failed=1
 
@@ -50,3 +58,7 @@ reports:
     files:
       - "*.xml"
     file-format: JUNITXML
+
+cache:
+  paths:
+    - /root/.m2/**/*

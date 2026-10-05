@@ -38,6 +38,8 @@ LABEL org.opencontainers.image.title="${APP_NAME}" \
       org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.description="SmartBid analyzer service (Spring Boot)"
 
+# curl version not pinned: an exact Debian version breaks the build whenever the base image is updated
+# hadolint ignore=DL3008
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/* \
@@ -58,8 +60,8 @@ COPY --from=extract --chown=spring:spring /extract/layers/application/ ./
 USER 10001:10001
 EXPOSE 8080 8081
 
-# curl -f fails on HTTP 503, which actuator returns when the app is DOWN
+# curl -f fails on HTTP 503, which actuator returns when the app is DOWN; Docker expects exit code 1 for unhealthy
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s --retries=3 \
-  CMD curl -sf http://localhost:8081/actuator/health || exit 1
+  CMD ["sh", "-c", "curl -sf http://localhost:8081/actuator/health || exit 1"]
 
 ENTRYPOINT ["java", "-jar", "application.jar"]

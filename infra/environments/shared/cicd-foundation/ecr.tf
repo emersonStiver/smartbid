@@ -65,6 +65,8 @@ resource "aws_ecr_lifecycle_policy" "app" {
 # ---------------------------------------------------------------------------------------------
 # CI tools image: every tag immutable except "latest", which CodeBuild projects reference
 # ---------------------------------------------------------------------------------------------
+# trivy AWS-0031: Immutable except the "latest" tag, which CodeBuild projects reference
+#trivy:ignore:AWS-0031
 resource "aws_ecr_repository" "ci_tools" {
   #checkov:skip=CKV_AWS_51:Immutable except the "latest" tag (IMMUTABLE_WITH_EXCLUSION), which CodeBuild projects reference
   #checkov:skip=CKV_AWS_136:AES256 at rest is sufficient for the internal tools image
@@ -100,6 +102,11 @@ resource "aws_ecr_lifecycle_policy" "ci_tools" {
 # ---------------------------------------------------------------------------------------------
 # Docker build cache (buildx --cache-to type=registry): cache tags are overwritten on every build
 # ---------------------------------------------------------------------------------------------
+# trivy AWS-0031: Cache tags must be overwritten on every build
+# trivy AWS-0030: Cache layers are never deployed; the final image is scanned instead
+# (trivy ignore lines must sit directly above the resource, with no other comments in between)
+#trivy:ignore:AWS-0031
+#trivy:ignore:AWS-0030
 resource "aws_ecr_repository" "build_cache" {
   #checkov:skip=CKV_AWS_51:Cache tags must be overwritten on every build
   #checkov:skip=CKV_AWS_136:AES256 at rest is sufficient for build cache layers

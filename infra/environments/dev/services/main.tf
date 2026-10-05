@@ -96,6 +96,8 @@ resource "aws_vpc_security_group_ingress_rule" "app" {
 }
 
 # ECR, S3 (image layers) and CloudWatch Logs are all reached over HTTPS
+# trivy AWS-0104: No NAT or VPC endpoints: ECR, S3 and CloudWatch are reached over public HTTPS
+#trivy:ignore:AWS-0104
 resource "aws_vpc_security_group_egress_rule" "https" {
   #checkov:skip=CKV_AWS_382:Tasks have no NAT or VPC endpoints; ECR, S3 and CloudWatch are reached over public HTTPS
   security_group_id = aws_security_group.service.id

@@ -1,9 +1,9 @@
-# required_version and pinned required_providers
+# required_version and required_providers for the lambda-funtion module
 terraform {
   required_version = ">= 1.11"
   required_providers {
     aws = {
-      source  = "registry.terraform.io/hashicorp/aws"
+      source  = "hashicorp/aws"
       version = "6.66.0"
     }
   }

@@ -1,5 +1,8 @@
 # Module: state-backend — S3 state bucket: versioning, encryption, public access block, prevent_destroy
 resource "aws_s3_bucket" "this" {
+  #checkov:skip=CKV2_AWS_62:Nothing consumes event notifications from the Terraform state bucket
+  #checkov:skip=CKV_AWS_18:Access logging needs a central log bucket, which is not in scope yet
+  #checkov:skip=CKV_AWS_144:State is protected by versioning; cross-region replication is not required
   bucket = var.bucket_name
   lifecycle {
     prevent_destroy = true
