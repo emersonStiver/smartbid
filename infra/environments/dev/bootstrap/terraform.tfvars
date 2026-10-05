@@ -5,3 +5,5 @@ versioning_enabled      = true
 lifecycle_rules_enabled = true
 deny_bucket_deletion    = false
 bucket_region           = "us-east-1"
+project                 = "smartbid"
+shared_account_id       = "965452087758"

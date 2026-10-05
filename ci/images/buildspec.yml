@@ -1,2 +1,35 @@
-# CodeBuild buildspec: myapp-ci-image-build
-# docker build ci/images/tools -> push to ECR myapp-ci/tools (privileged mode)
+# CodeBuild buildspec: smartbid-ci-image-build (infra/environments/shared/cicd-builds)
+# Runs on the AWS curated image (privileged), so it can build the tools image the first time.
+# Triggers: push to main touching ci/images/** (webhook) and every Monday (EventBridge).
+# Env (from Terraform): REGISTRY, BASE_REGISTRY, TOOLS_REPOSITORY_URI
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+      # Unique, immutable tag: date + time + commit; "latest" is the one mutable tag projects use
+      - TAG="$(date -u +%Y%m%d%H%M)-${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}"
+      - echo "Building $TOOLS_REPOSITORY_URI:$TAG"
+
+  build:
+    commands:
+      - >-
+        docker build --pull
+        --build-arg BASE_REGISTRY="$BASE_REGISTRY"
+        --label org.opencontainers.image.revision="$CODEBUILD_RESOLVED_SOURCE_VERSION"
+        --tag "$TOOLS_REPOSITORY_URI:$TAG"
+        --tag "$TOOLS_REPOSITORY_URI:latest"
+        ci/images/tools
+
+  post_build:
+    commands:
+      # post_build runs even when build failed; only push a successful image
+      - |
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]; then
+          docker push "$TOOLS_REPOSITORY_URI:$TAG"
+          docker push "$TOOLS_REPOSITORY_URI:latest"
+        fi

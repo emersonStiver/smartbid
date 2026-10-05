@@ -12,7 +12,7 @@ issue  →  branch  →  commits  →  push  →  pull request  →  checks + re
 2. **Create a short-lived branch from an up-to-date `main`.** Aim to merge within a day or two.
 3. **Commit in small steps** with Conventional Commit messages.
 4. **Open a pull request** early (as a draft if it's not ready) and link the issue.
-5. **Checks must pass:** local pre-commit hooks, then the CodeBuild `myapp-pr-check` status on the PR.
+5. **Checks must pass:** local pre-commit hooks, then the CodeBuild `smartbid-pr-check` status on the PR.
 6. **Squash merge.** The PR becomes one commit on `main` whose message is the PR title.
 7. **Delete the branch.** GitHub does this automatically after merge.
 

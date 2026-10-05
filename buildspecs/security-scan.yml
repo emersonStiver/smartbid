@@ -1,2 +1,52 @@
-# CodeBuild buildspec: myapp-security-scan
-# Validate stage — SAST, dependency and IaC scans (report: myapp-security-findings)
+# CodeBuild buildspec: smartbid-security-scan — pipeline stage Validate (parallel with build-test)
+# Every scanner runs even if an earlier one fails; the build fails at the end if any found a problem.
+#   gitleaks  secrets in the source
+#   semgrep   SAST (code patterns) for the Java service
+#   trivy fs  vulnerable dependencies + misconfigurations (Dockerfiles, etc.)
+#   checkov   Terraform security
+# Report group: smartbid-security-scan-security-findings. Raw reports are copied to the reports bucket.
+# Env: REPORTS_BUCKET (Terraform), COMMIT_ID (pipeline)
+version: 0.2
+
+env:
+  shell: bash
+  # SaaS scanner tokens, once cicd-foundation create_scanner_tokens_secret = true and the secret has a value:
+  # secrets-manager:
+  #   SEMGREP_APP_TOKEN: "smartbid/ci/scanner-tokens:SEMGREP_APP_TOKEN"
+
+phases:
+  build:
+    commands:
+      - |
+        mkdir -p reports
+        failed=0
+
+        echo "===== gitleaks"
+        gitleaks dir . --redact --exit-code 1 \
+          --report-format junit --report-path reports/gitleaks.xml || failed=1
+
+        echo "===== semgrep"
+        semgrep scan --metrics=off --error --config p/java --config p/secrets \
+          --junit-xml --output reports/semgrep.xml analyzer-service || failed=1
+
+        echo "===== trivy (dependencies + misconfigurations)"
+        trivy fs --scanners vuln,misconfig --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+          --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
+          --output reports/trivy-fs.xml . || failed=1
+
+        echo "===== checkov (terraform)"
+        checkov --directory infra --framework terraform --quiet --skip-path '\.terraform' \
+          --output junitxml > reports/checkov.xml || failed=1
+
+        exit "$failed"
+
+  post_build:
+    commands:
+      - aws s3 cp reports "s3://$REPORTS_BUCKET/security-scan/${COMMIT_ID:-$CODEBUILD_BUILD_NUMBER}/" --recursive
+
+reports:
+  security-findings:
+    base-directory: reports
+    files:
+      - "*.xml"
+    file-format: JUNITXML

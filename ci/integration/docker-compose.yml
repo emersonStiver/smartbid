@@ -1,0 +1,27 @@
+# Integration test environment, used by buildspecs/integration-test.yml.
+# Also runs locally (from the repo root):
+#   docker compose -f ci/integration/docker-compose.yml up --build --wait
+#   bash ci/integration/smoke-test.sh /tmp/integration-tests.xml
+name: smartbid-integration
+
+services:
+  analyzer-service:
+    build:
+      context: ../../analyzer-service
+      args:
+        # CodeBuild passes the ECR pull-through cache; locally it falls back to ECR Public
+        BASE_REGISTRY: ${BASE_REGISTRY:-public.ecr.aws/docker/library}
+    environment:
+      SPRING_PROFILES_ACTIVE: integration
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    # --wait uses the image's HEALTHCHECK (actuator on 8081)
+
+  # Add the service's dependencies here and make analyzer-service depend on them, e.g.:
+  # postgres:
+  #   image: ${BASE_REGISTRY:-public.ecr.aws/docker/library}/postgres:17
+  #   environment:
+  #     POSTGRES_PASSWORD: integration
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "postgres"]

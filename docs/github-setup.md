@@ -84,29 +84,29 @@ Follow your stack order. The GitHub-related parts of each stack:
 
 | Stack | GitHub-related piece | What to do on the GitHub side |
 |---|---|---|
-| `cicd-foundation` | `myapp-github` CodeConnections connection | After `apply`, finish the handshake (below). Grant access to **this repo only**. |
-| `cicd-builds` | `myapp-pr-check` webhook (pull requests) | Nothing to click. The webhook appears under repo **Settings → Webhooks** automatically. Then make its status a required check (below). |
-| `cicd-builds` | `myapp-ci-image-build` webhook (push to `main`, `ci/images/**`) | Nothing. Same automatic webhook. |
+| `cicd-foundation` | `smartbid-github` CodeConnections connection | After `apply`, finish the handshake (below). Grant access to **this repo only**. |
+| `cicd-builds` | `smartbid-pr-check` webhook (pull requests) | Nothing to click. The webhook appears under repo **Settings → Webhooks** automatically. Then make its status a required check (below). |
+| `cicd-builds` | `smartbid-ci-image-build` webhook (push to `main`, `ci/images/**`) | Nothing. Same automatic webhook. |
 | `cicd-pipeline` | Source stage + trigger on push to `main` | Nothing. Every squash merge is one push to `main`, so one pipeline run. `IMAGE_TAG` is that commit's SHA. |
-| `cicd-notifications` | `myapp-pr-check-events` | Nothing. A failed PR check is also visible on the PR itself. |
+| `cicd-notifications` | `smartbid-pr-check-events` | Nothing. A failed PR check is also visible on the PR itself. |
 
 ### Finish the CodeConnections handshake (once)
 
 The connection is created in `PENDING` status; Terraform can't complete the GitHub authorization.
 
-1. AWS Console (shared account) → Developer Tools → Settings → **Connections** → `myapp-github` → **Update pending connection**.
+1. AWS Console (shared account) → Developer Tools → Settings → **Connections** → `smartbid-github` → **Update pending connection**.
 2. Install the **AWS Connector for GitHub** app on your GitHub organization.
 3. Repository access: **Only select repositories** → this repo.
 4. Status becomes `AVAILABLE`.
 
-### Make `myapp-pr-check` a required check
+### Make `smartbid-pr-check` a required check
 
-1. Open a test PR. The check CodeBuild posts appears at the bottom of the PR; note its exact name (it includes the project name and region).
-2. **Settings → Rules → Rulesets → protect-main → Add rule → Require status checks to pass** → add that check → enable **Require branches to be up to date before merging**.
+1. Open a test PR. CodeBuild posts a check named **`smartbid/pr-check`** at the bottom of the PR (set by `build_status_context` in `cicd-builds`).
+2. **Settings → Rules → Rulesets → protect-main → Add rule → Require status checks to pass** → add `smartbid/pr-check` → enable **Require branches to be up to date before merging**.
 
 > Only add the required check after CodeBuild has reported at least once. If it's required first, every PR waits forever for a check that never arrives.
 
-### Security reminders for `myapp-pr-check`
+### Security reminders for `smartbid-pr-check`
 
-- PR code is untrusted until reviewed: `myapp-codebuild-pr-check-role` gets read-only, reports and tools-image pull only. No deploy permissions, no secrets.
-- Webhook `ACTOR_ACCOUNT_ID` filter: your GitHub user ID and `dependabot[bot]`. Get IDs from `https://api.github.com/users/<username>`. Leaving Dependabot out means its PRs never get the required check and can't merge.
+- PR code is untrusted until reviewed: `smartbid-codebuild-pr-check-role` gets read-only, reports and tools-image pull only. No deploy permissions, no secrets.
+- The webhook's `pull_request_build_policy` builds PRs from **forks** only after a maintainer approves them with a comment. PRs from branches in the repo (yours, Dependabot's) build automatically.

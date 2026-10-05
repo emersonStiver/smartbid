@@ -25,3 +25,10 @@ variable "managed_by" {
   description = "The entity managing the resources"
   type        = string
 }
+
+variable "notification_emails" {
+  description = "Email addresses subscribed to the notifications topic (each must confirm the subscription email)"
+  type        = list(string)
+  default     = []
+}
+

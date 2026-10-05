@@ -28,3 +28,18 @@ variable "deny_bucket_deletion" {
   type        = bool
   description = "Whether to deny bucket deletion or not"
 }
+
+variable "project" {
+  type        = string
+  description = "Project name used as resource name prefix"
+}
+
+variable "shared_account_id" {
+  type        = string
+  description = "Account that runs the CI/CD pipeline and assumes the deploy role"
+
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.shared_account_id))
+    error_message = "shared_account_id must be a 12-digit AWS account ID."
+  }
+}

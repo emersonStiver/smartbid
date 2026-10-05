@@ -25,3 +25,25 @@ variable "managed_by" {
   description = "The entity managing the resources"
   type        = string
 }
+
+variable "github_repository" {
+  description = "GitHub repository as <owner>/<repo>"
+  type        = string
+}
+
+variable "main_branch" {
+  description = "Branch pull requests merge into"
+  type        = string
+  default     = "main"
+}
+
+variable "app_service" {
+  description = "Service the package-publish project builds (must exist in cicd-foundation app_repositories)"
+  type        = string
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch retention for build logs"
+  type        = number
+  default     = 30
+}
