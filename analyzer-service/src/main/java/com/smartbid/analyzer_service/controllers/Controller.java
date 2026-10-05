@@ -2,9 +2,6 @@ package com.smartbid.analyzer_service.controllers;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
-
-
 
 
 @RestController 
@@ -22,14 +19,13 @@ public class Controller {
 
     @GetMapping("/testEmerson")
     public String getMethodName3() {
-        return "Hi from colombia";
+        return "Hi from colombiaa";
     }
 
-    @GetMapping("/testKaren")
-    public String getMethodName2() {
-        return "Hi Everybody, we are humans from earth, we come in peace";
+    @GetMapping("/testCamilo")
+    public String getMethodName4() {
+        return "Hi from colombiaa";
     }
-    
     
     
     
